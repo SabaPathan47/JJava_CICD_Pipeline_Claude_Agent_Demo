@@ -81,7 +81,7 @@ jobs:
 
       - name: Run Claude Security Agent
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NVDAI_API_KEY: ${{ secrets.NVDAI_API_KEY }}
         run: python scripts/agents/security_agent.py
 
       - name: Upload security report
@@ -141,7 +141,7 @@ jobs:
 
       - name: Run Claude Docker Agent
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NVDAI_API_KEY: ${{ secrets.NVDAI_API_KEY }}
           IMAGE_TAG: ${{ steps.meta.outputs.image-tag }}
         run: python scripts/agents/docker_agent.py
 
@@ -184,7 +184,7 @@ jobs:
 
       - name: Run Claude Deploy Agent
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NVDAI_API_KEY: ${{ secrets.NVDAI_API_KEY }}
           DEPLOY_STATUS: ${{ steps.deploy-step.outcome }}
           DEPLOY_ENV: "staging (simulated)"
           IMAGE_TAG: ${{ needs.docker-build.outputs.image-tag }}

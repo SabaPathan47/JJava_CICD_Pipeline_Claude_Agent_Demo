@@ -21,11 +21,19 @@ image is safe to publish to the registry and proceed to deploy. Use concise
 Markdown with headers and a findings table. If scan data is missing, state
 that explicitly."""
 
+# Keep prompts a reasonable size — large payloads can slow down the API
+# response and risk hitting request timeouts.
+DOCKERFILE_CHAR_LIMIT = 4000
+SCAN_REPORT_CHAR_LIMIT = 8000
+
 
 def read_dockerfile():
     if os.path.exists("Dockerfile"):
         with open("Dockerfile", "r", encoding="utf-8") as f:
-            return f.read()
+            content = f.read()
+        if len(content) > DOCKERFILE_CHAR_LIMIT:
+            content = content[:DOCKERFILE_CHAR_LIMIT] + "\n... [truncated for length]"
+        return content
     return "Dockerfile not found."
 
 
@@ -33,8 +41,17 @@ def read_image_scan():
     files = glob.glob("trivy-image-report.json")
     if not files:
         return "No Trivy image scan report found."
+
     with open(files[0], "r", encoding="utf-8") as f:
-        return f.read()[:8000]
+        content = f.read().strip()
+
+    if not content:
+        return "Trivy image scan report file was found but is empty."
+
+    if len(content) > SCAN_REPORT_CHAR_LIMIT:
+        content = content[:SCAN_REPORT_CHAR_LIMIT] + "\n... [truncated for length]"
+
+    return content
 
 
 def main():

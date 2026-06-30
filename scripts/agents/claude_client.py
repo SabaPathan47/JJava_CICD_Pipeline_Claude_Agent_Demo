@@ -14,9 +14,9 @@ MODEL = "claude-sonnet-4-6"
 
 
 def call_claude(system_prompt: str, user_prompt: str, max_tokens: int = 1500) -> str:
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    api_key = os.environ.get("NVDAI_API_KEY")
     if not api_key:
-        print("ERROR: ANTHROPIC_API_KEY secret is not set.", file=sys.stderr)
+        print("ERROR: NVDAI_API_KEY secret is not set.", file=sys.stderr)
         sys.exit(1)
 
     payload = {

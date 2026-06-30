@@ -1,7 +1,7 @@
 """
 claude_client.py
 Shared helper used by all three CI/CD pipeline agents to call the
-Anthropic Claude API and get back a structured Markdown report section.
+NVIDIA NIM API and get back a structured Markdown report section.
 """
 import os
 import sys
@@ -9,8 +9,8 @@ import json
 import urllib.request
 import urllib.error
 
-ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
-MODEL = "claude-sonnet-4-6"
+NVIDIA_NIM_API_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
+MODEL = "meta/llama-3.1-70b-instruct"
 
 
 def call_claude(system_prompt: str, user_prompt: str, max_tokens: int = 1500) -> str:
@@ -22,17 +22,18 @@ def call_claude(system_prompt: str, user_prompt: str, max_tokens: int = 1500) ->
     payload = {
         "model": MODEL,
         "max_tokens": max_tokens,
-        "system": system_prompt,
-        "messages": [{"role": "user", "content": user_prompt}],
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ],
     }
 
     req = urllib.request.Request(
-        ANTHROPIC_API_URL,
+        NVIDIA_NIM_API_URL,
         data=json.dumps(payload).encode("utf-8"),
         headers={
             "Content-Type": "application/json",
-            "x-api-key": api_key,
-            "anthropic-version": "2023-06-01",
+            "Authorization": f"Bearer {api_key}",
         },
         method="POST",
     )
@@ -41,11 +42,19 @@ def call_claude(system_prompt: str, user_prompt: str, max_tokens: int = 1500) ->
         with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as e:
-        print(f"ERROR calling Claude API: {e.code} {e.read().decode('utf-8')}", file=sys.stderr)
+        error_detail = e.read().decode('utf-8')
+        print(f"ERROR calling NVIDIA NIM API: {e.code} {error_detail}", file=sys.stderr)
         sys.exit(1)
 
-    text_blocks = [block["text"] for block in data.get("content", []) if block.get("type") == "text"]
-    return "\n".join(text_blocks).strip()
+    # Extract content from NVIDIA's response format (OpenAI-compatible)
+    try:
+        content = data["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError):
+        print(f"ERROR: Unexpected response format from NVIDIA NIM API", file=sys.stderr)
+        print(f"Response: {json.dumps(data)}", file=sys.stderr)
+        sys.exit(1)
+    
+    return content.strip()
 
 
 def write_report(path: str, content: str):

@@ -113,7 +113,10 @@ jobs:
 
       - name: Set image tag
         id: meta
-        run: echo "image-tag=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+        run: |
+          IMAGE_NAME_LOWER=$(echo "${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
+          echo "image-tag=${{ env.REGISTRY }}/${IMAGE_NAME_LOWER}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          echo "image-name-lower=${IMAGE_NAME_LOWER}" >> "$GITHUB_OUTPUT"
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -123,7 +126,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Docker image
-        run: docker build -t ${{ steps.meta.outputs.image-tag }} -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest .
+        run: docker build -t ${{ steps.meta.outputs.image-tag }} -t ${{ env.REGISTRY }}/${{ steps.meta.outputs.image-name-lower }}:latest .
 
       - name: Trivy image scan
         uses: aquasecurity/trivy-action@v0.36.0
@@ -154,7 +157,7 @@ jobs:
       - name: Push image to GHCR
         run: |
           docker push ${{ steps.meta.outputs.image-tag }}
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          docker push ${{ env.REGISTRY }}/${{ steps.meta.outputs.image-name-lower }}:latest
 
   # ---------------------------------------------------------------
   # Stage 5: Deploy (simulated, no Kubernetes) + Claude Agent #3
